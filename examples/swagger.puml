@@ -55,92 +55,286 @@ class  ApiResponse {
 
 
 interface PetApi {
-	 + <i>updatePet(Pet body)</i><b>:void</b> 
+	 + <i>PUT updatePet(Pet body)</i><b>:void</b> 
 }
 
 interface PetApi {
-	 + <i>addPet(Pet body)</i><b>:void</b> 
+	 + <i>POST addPet(Pet body)</i><b>:void</b> 
 }
 
 interface PetApi {
-	 + <i>findPetsByStatus(String[] status)</i><b>:Pet[]</b> 
+	 + <i>GET findPetsByStatus(String[] status)</i><b>:Pet[]</b> 
 }
 
 interface PetApi {
-	 + <i>findPetsByTags(String[] tags)</i><b>:Pet[]</b> 
+	 + <i>GET findPetsByTags(String[] tags)</i><b>:Pet[]</b> 
 }
 
 interface PetApi {
-	 + <i>getPetById(Integer petId)</i><b>:Pet</b> 
+	 + <i>GET getPetById(Integer petId)</i><b>:Pet</b> 
 }
 
 interface PetApi {
-	 + <i>updatePetWithForm(Integer petId,String name,String status)</i><b>:void</b> 
+	 + <i>POST updatePetWithForm(Integer petId,String name,String status)</i><b>:void</b> 
 }
 
 interface PetApi {
-	 + <i>deletePet(Integer petId)</i><b>:void</b> 
+	 + <i>DELETE deletePet(Integer petId)</i><b>:void</b> 
 }
 
 interface PetApi {
-	 + <i>uploadFile(Integer petId,String additionalMetadata,File file)</i><b>:ApiResponse</b> 
+	 + <i>POST uploadFile(Integer petId,String additionalMetadata,File file)</i><b>:ApiResponse</b> 
 }
 
 interface StoreApi {
-	 + <i>getInventory()</i><b>:void</b> 
+	 + <i>GET getInventory()</i><b>:void</b> 
 }
 
 interface StoreApi {
-	 + <i>placeOrder(Order body)</i><b>:Order</b> 
+	 + <i>POST placeOrder(Order body)</i><b>:Order</b> 
 }
 
 interface StoreApi {
-	 + <i>getOrderById(Integer orderId)</i><b>:Order</b> 
+	 + <i>GET getOrderById(Integer orderId)</i><b>:Order</b> 
 }
 
 interface StoreApi {
-	 + <i>deleteOrder(Integer orderId)</i><b>:void</b> 
+	 + <i>DELETE deleteOrder(Integer orderId)</i><b>:void</b> 
 }
 
 interface UserApi {
-	 + <i>createUser(User body)</i><b>:void</b> 
+	 + <i>POST createUser(User body)</i><b>:void</b> 
 }
 
 interface UserApi {
-	 + <i>createUsersWithArrayInput(User[] body)</i><b>:void</b> 
+	 + <i>POST createUsersWithArrayInput(User[] body)</i><b>:void</b> 
 }
 
 interface UserApi {
-	 + <i>createUsersWithListInput(User[] body)</i><b>:void</b> 
+	 + <i>POST createUsersWithListInput(User[] body)</i><b>:void</b> 
 }
 
 interface UserApi {
-	 + <i>loginUser(String username,String password)</i><b>:void</b> 
+	 + <i>GET loginUser(String username,String password)</i><b>:void</b> 
 }
 
 interface UserApi {
-	 + <i>logoutUser()</i><b>:void</b> 
+	 + <i>GET logoutUser()</i><b>:void</b> 
 }
 
 interface UserApi {
-	 + <i>getUserByName(String username)</i><b>:User</b> 
+	 + <i>GET getUserByName(String username)</i><b>:User</b> 
 }
 
 interface UserApi {
-	 + <i>updateUser(String username,User body)</i><b>:void</b> 
+	 + <i>PUT updateUser(String username,User body)</i><b>:void</b> 
 }
 
 interface UserApi {
-	 + <i>deleteUser(String username)</i><b>:void</b> 
+	 + <i>DELETE deleteUser(String username)</i><b>:void</b> 
 }
 
 
-Pet  *-- "0..*"  Category 
-Pet  *-- "0..*"  Tag 
-PetApi -->    Pet 
-PetApi -->    ApiResponse 
-StoreApi -->    Order 
-UserApi -->    User 
+    abstract PUT_updatePet {
+        .. body ..
+        * <i>payload</i><b>:Pet</b>
+        .. responses ..
+         <i>400</i><b>:</b>
+         <i>404</i><b>:</b>
+         <i>405</i><b>:</b>
+    }
+
+    abstract POST_addPet {
+        .. body ..
+        * <i>payload</i><b>:Pet</b>
+        .. responses ..
+         <i>405</i><b>:</b>
+    }
+
+    abstract GET_findPetsByStatus {
+        .. query params ..
+        * <i>status</i><b>:array</b>
+        .. responses ..
+         <i>200</i><b>:</b>
+         <i>400</i><b>:</b>
+    }
+
+    abstract GET_findPetsByTags {
+        .. query params ..
+        * <i>tags</i><b>:array</b>
+        .. responses ..
+         <i>200</i><b>:</b>
+         <i>400</i><b>:</b>
+    }
+
+    abstract GET_getPetById {
+        .. path params ..
+        * <i>petId</i><b>:integer int64</b>
+        .. responses ..
+         <i>200</i><b>:Pet</b>
+         <i>400</i><b>:</b>
+         <i>404</i><b>:</b>
+    }
+
+    abstract POST_updatePetWithForm {
+        .. path params ..
+        * <i>petId</i><b>:integer int64</b>
+        .. form params ..
+         <i>name</i><b>:string</b>
+         <i>status</i><b>:string</b>
+        .. responses ..
+         <i>405</i><b>:</b>
+    }
+
+    abstract DELETE_deletePet {
+        .. path params ..
+        * <i>petId</i><b>:integer int64</b>
+        .. query params ..
+             <i>api_key</i><b>:string</b>
+        .. responses ..
+         <i>400</i><b>:</b>
+         <i>404</i><b>:</b>
+    }
+
+    abstract POST_uploadFile {
+        .. path params ..
+        * <i>petId</i><b>:integer int64</b>
+        .. form params ..
+         <i>additionalMetadata</i><b>:string</b>
+         <i>file</i><b>:file</b>
+        .. responses ..
+         <i>200</i><b>:ApiResponse</b>
+    }
+
+    abstract GET_getInventory {
+        .. responses ..
+         <i>200</i><b>:</b>
+    }
+
+    abstract POST_placeOrder {
+        .. body ..
+        * <i>payload</i><b>:Order</b>
+        .. responses ..
+         <i>200</i><b>:Order</b>
+         <i>400</i><b>:</b>
+    }
+
+    abstract GET_getOrderById {
+        .. path params ..
+        * <i>orderId</i><b>:integer int64</b>
+        .. responses ..
+         <i>200</i><b>:Order</b>
+         <i>400</i><b>:</b>
+         <i>404</i><b>:</b>
+    }
+
+    abstract DELETE_deleteOrder {
+        .. path params ..
+        * <i>orderId</i><b>:integer int64</b>
+        .. responses ..
+         <i>400</i><b>:</b>
+         <i>404</i><b>:</b>
+    }
+
+    abstract POST_createUser {
+        .. body ..
+        * <i>payload</i><b>:User</b>
+        .. responses ..
+         <i>default</i><b>:</b>
+    }
+
+    abstract POST_createUsersWithArrayInput {
+        .. body ..
+        * <i>payload</i><b>:array[]</b>
+        .. responses ..
+         <i>default</i><b>:</b>
+    }
+
+    abstract POST_createUsersWithListInput {
+        .. body ..
+        * <i>payload</i><b>:array[]</b>
+        .. responses ..
+         <i>default</i><b>:</b>
+    }
+
+    abstract GET_loginUser {
+        .. query params ..
+        * <i>username</i><b>:string</b>
+        * <i>password</i><b>:string</b>
+        .. responses ..
+         <i>200</i><b>:String</b>
+         <i>400</i><b>:</b>
+    }
+
+    abstract GET_logoutUser {
+        .. responses ..
+         <i>default</i><b>:</b>
+    }
+
+    abstract GET_getUserByName {
+        .. path params ..
+        * <i>username</i><b>:string</b>
+        .. responses ..
+         <i>200</i><b>:User</b>
+         <i>400</i><b>:</b>
+         <i>404</i><b>:</b>
+    }
+
+    abstract PUT_updateUser {
+        .. path params ..
+        * <i>username</i><b>:string</b>
+        .. body ..
+        * <i>payload</i><b>:User</b>
+        .. responses ..
+         <i>400</i><b>:</b>
+         <i>404</i><b>:</b>
+    }
+
+    abstract DELETE_deleteUser {
+        .. path params ..
+        * <i>username</i><b>:string</b>
+        .. responses ..
+         <i>400</i><b>:</b>
+         <i>404</i><b>:</b>
+    }
+
+
+
+Pet   *-- "0..*"  Category
+Pet   *-- "0..*"  Tag
+PUT_updatePet -->     Pet
+PetApi  ..>    PUT_updatePet
+POST_addPet -->     Pet
+PetApi  ..>    POST_addPet
+GET_findPetsByStatus -->     Pet
+PetApi  ..>    GET_findPetsByStatus
+GET_findPetsByTags -->     Pet
+PetApi  ..>    GET_findPetsByTags
+GET_getPetById -->     Pet
+PetApi  ..>    GET_getPetById
+PetApi  ..>    POST_updatePetWithForm
+PetApi  ..>    DELETE_deletePet
+POST_uploadFile -->     ApiResponse
+PetApi  ..>    POST_uploadFile
+StoreApi  ..>    GET_getInventory
+POST_placeOrder -->     Order
+StoreApi  ..>    POST_placeOrder
+GET_getOrderById -->     Order
+StoreApi  ..>    GET_getOrderById
+StoreApi  ..>    DELETE_deleteOrder
+POST_createUser -->     User
+UserApi  ..>    POST_createUser
+POST_createUsersWithArrayInput -->     User
+UserApi  ..>    POST_createUsersWithArrayInput
+POST_createUsersWithListInput -->     User
+UserApi  ..>    POST_createUsersWithListInput
+UserApi  ..>    GET_loginUser
+UserApi  ..>    GET_logoutUser
+GET_getUserByName -->     User
+UserApi  ..>    GET_getUserByName
+PUT_updateUser -->     User
+UserApi  ..>    PUT_updateUser
+UserApi  ..>    DELETE_deleteUser
 
 note as N1
   Name: <b><color:royalBlue>Swagger Petstore</color>
