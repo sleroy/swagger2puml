@@ -1,0 +1,708 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "v1",
+        "title": "Products API"
+    },
+    "paths": {
+        "/api/Products/{cantonCode}/{regionCode}/{birthYear}/{gender}/{contractStartDate}/{nbChildren}": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get all products.",
+                "operationId": "ApiProductsByCantonCodeByRegionCodeByBirthYearByGenderByContractStartDateByNbChildrenGet",
+                "consumes": [],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "cantonCode",
+                        "in": "path",
+                        "description": "The canton code (VD, ZH etc).",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "regionCode",
+                        "in": "path",
+                        "description": "The region code (1, 2 or 3).",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "birthYear",
+                        "in": "path",
+                        "description": "User birth year (format yyyy).",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "gender",
+                        "in": "path",
+                        "description": "Customer gender (m male, f female).",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "contractStartDate",
+                        "in": "path",
+                        "description": "Start date of insurance coverage (format yyyy-MM-dd).",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "nbChildren",
+                        "in": "path",
+                        "description": "Number of childs in the family group.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "deprecated": true
+            }
+        },
+        "/api/Products/discounts": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get Discounts based on the proposition context and selected products.",
+                "operationId": "ApiProductsDiscountsPost",
+                "consumes": [
+                    "application/json-patch+json",
+                    "application/json",
+                    "text/json",
+                    "application/*+json",
+                    "application/xml",
+                    "text/xml",
+                    "application/*+xml"
+                ],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "context",
+                        "in": "body",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/definitions/DiscountContext"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "deprecated": true
+            }
+        },
+        "/api/Products/familydiscounts": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get FamilyDiscounts based on the proposition context and selected products.",
+                "description": "The whole family context is required so that combined discounts based on many family members can be calculated properly by the AS400.\t\r\nSince no unique product identifier exists now all fields are required to identify a product are required in the call so that the appropriate product can be considered in the calculationsIn that context, the PremiumGross field need to be the appropriate gross premium with or without accident depending on the choice of the customer.The AssuranceIncluded field won’t affect calculations at this time.\r\nLAMal products require the franchise\r\nPecunia products require an extra amount and delay\r\nPrevista sub options must be added together to calculate the proper Premium Gross, since only one discount will apply.\r\nFamily members will be returned in the same order that they were sent to us in the parameters",
+                "operationId": "ApiProductsFamilydiscountsPost",
+                "consumes": [
+                    "application/json-patch+json",
+                    "application/json",
+                    "text/json",
+                    "application/*+json",
+                    "application/xml",
+                    "text/xml",
+                    "application/*+xml"
+                ],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "context",
+                        "in": "body",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/definitions/FamilyDiscountContext"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "deprecated": true
+            }
+        },
+        "/api/v3/Products/GetDisplayProductRules": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get display product rules",
+                "operationId": "ApiV3ProductsGetDisplayProductRulesGet",
+                "consumes": [],
+                "produces": [],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v3/Products/{cantonCode}/{regionCode}/{birthYear}/{gender}/{nbChildren}": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Return product variants wth discount",
+                "description": "Return all products with variants and discount prices (variant with PremiumNet and PremiumNetWithAccident)\r\n            Periodicity payment discount are include in premiumNet prices",
+                "operationId": "ApiV3ProductsByCantonCodeByRegionCodeByBirthYearByGenderByNbChildrenGet",
+                "consumes": [],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "cantonCode",
+                        "in": "path",
+                        "description": "The canton code (VD, ZH etc).",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "regionCode",
+                        "in": "path",
+                        "description": "The region code (1, 2 or 3).",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "birthYear",
+                        "in": "path",
+                        "description": "User birth year (format yyyy)",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "gender",
+                        "in": "path",
+                        "description": "Customer gender (m male, f female, p prenatal)",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "nbChildren",
+                        "in": "path",
+                        "description": "nb children",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "contractStartDate",
+                        "in": "query",
+                        "description": "Start date of insurance coverage (format yyyy-MM-dd) equals to birth date for prenatal.",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "periodicity",
+                        "in": "query",
+                        "description": "Periodicity of payment : annual = 1, biannual = 2, quarterly = 4,  monthly = 9 - default monthly in configuration",
+                        "required": false,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v3/Products/discounts": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get Discounts based on the proposition context and selected products.",
+                "operationId": "ApiV3ProductsDiscountsPost",
+                "consumes": [
+                    "application/json-patch+json",
+                    "application/json",
+                    "text/json",
+                    "application/*+json",
+                    "application/xml",
+                    "text/xml",
+                    "application/*+xml"
+                ],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "context",
+                        "in": "body",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/definitions/DiscountContext"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v3/Products/familydiscounts": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get FamilyDiscounts based on the proposition context and selected products.",
+                "description": "The whole family context is required so that combined discounts based on many family members can be calculated properly by the AS400.\t\r\nSince no unique product identifier exists now all fields are required to identify a product are required in the call so that the appropriate product can be considered in the calculationsIn that context, the PremiumGross field need to be the appropriate gross premium with or without accident depending on the choice of the customer.The AssuranceIncluded field won’t affect calculations at this time.\r\nLAMal products require the franchise\r\nPecunia products require an extra amount and delay\r\nPrevista sub options must be added together to calculate the proper Premium Gross, since only one discount will apply.\r\nFamily members will be returned in the same order that they were sent to us in the parameters",
+                "operationId": "ApiV3ProductsFamilydiscountsPost",
+                "consumes": [
+                    "application/json-patch+json",
+                    "application/json",
+                    "text/json",
+                    "application/*+json",
+                    "application/xml",
+                    "text/xml",
+                    "application/*+xml"
+                ],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "context",
+                        "in": "body",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/definitions/FamilyDiscountContext"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v3/Products/GetContractStartDate": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Return the start date according to ContractStartDate rules regarding currentDate and offer request (Laml and/or Lca)",
+                "operationId": "ApiV3ProductsGetContractStartDateGet",
+                "consumes": [],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "hasLamal",
+                        "in": "query",
+                        "description": "Offer has Lamal request",
+                        "required": false,
+                        "type": "boolean"
+                    },
+                    {
+                        "name": "hasLca",
+                        "in": "query",
+                        "description": "Offer hca Lca request",
+                        "required": false,
+                        "type": "boolean"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "500": {
+                        "description": "InternalServerError"
+                    }
+                }
+            }
+        },
+        "/api/v2/Products/{cantonCode}/{regionCode}/{birthYear}/{gender}/{nbChildren}": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Return product variants wth discount",
+                "description": "Return all products with variants and discount prices (variant with PremiumNet and PremiumNetWithAccident)\r\n            Periodicity payment discount are include in premiumNet prices",
+                "operationId": "ApiV2ProductsByCantonCodeByRegionCodeByBirthYearByGenderByNbChildrenGet",
+                "consumes": [],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "cantonCode",
+                        "in": "path",
+                        "description": "The canton code (VD, ZH etc).",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "regionCode",
+                        "in": "path",
+                        "description": "The region code (1, 2 or 3).",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "birthYear",
+                        "in": "path",
+                        "description": "User birth year (format yyyy)",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "gender",
+                        "in": "path",
+                        "description": "Customer gender (m male, f female)",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "nbChildren",
+                        "in": "path",
+                        "description": "nb children",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "contractStartDate",
+                        "in": "query",
+                        "description": "Start date of insurance coverage (format yyyy-MM-dd).",
+                        "required": false,
+                        "type": "string"
+                    },
+                    {
+                        "name": "periodicity",
+                        "in": "query",
+                        "description": "Periodicity of payment : annual = 1, biannual = 2, quarterly = 4,  monthly = 9 - default monthly in configuration",
+                        "required": false,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v2/Products/discounts": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get Discounts based on the proposition context and selected products.",
+                "operationId": "ApiV2ProductsDiscountsPost",
+                "consumes": [
+                    "application/json-patch+json",
+                    "application/json",
+                    "text/json",
+                    "application/*+json",
+                    "application/xml",
+                    "text/xml",
+                    "application/*+xml"
+                ],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "context",
+                        "in": "body",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/definitions/DiscountContext"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v2/Products/familydiscounts": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get FamilyDiscounts based on the proposition context and selected products.",
+                "description": "The whole family context is required so that combined discounts based on many family members can be calculated properly by the AS400.\t\r\nSince no unique product identifier exists now all fields are required to identify a product are required in the call so that the appropriate product can be considered in the calculationsIn that context, the PremiumGross field need to be the appropriate gross premium with or without accident depending on the choice of the customer.The AssuranceIncluded field won’t affect calculations at this time.\r\nLAMal products require the franchise\r\nPecunia products require an extra amount and delay\r\nPrevista sub options must be added together to calculate the proper Premium Gross, since only one discount will apply.\r\nFamily members will be returned in the same order that they were sent to us in the parameters",
+                "operationId": "ApiV2ProductsFamilydiscountsPost",
+                "consumes": [
+                    "application/json-patch+json",
+                    "application/json",
+                    "text/json",
+                    "application/*+json",
+                    "application/xml",
+                    "text/xml",
+                    "application/*+xml"
+                ],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "context",
+                        "in": "body",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/definitions/FamilyDiscountContext"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                }
+            }
+        },
+        "/api/v2/Products/GetContractStartDate": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Return the start date according to ContractStartDate rules regarding currentDate and offer request (Laml and/or Lca)",
+                "operationId": "ApiV2ProductsGetContractStartDateGet",
+                "consumes": [],
+                "produces": [],
+                "parameters": [
+                    {
+                        "name": "hasLamal",
+                        "in": "query",
+                        "description": "Offer has Lamal request",
+                        "required": false,
+                        "type": "boolean"
+                    },
+                    {
+                        "name": "hasLca",
+                        "in": "query",
+                        "description": "Offer hca Lca request",
+                        "required": false,
+                        "type": "boolean"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "500": {
+                        "description": "InternalServerError"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "DiscountContext": {
+            "required": [
+                "cantonCode",
+                "regionCode",
+                "birthYear",
+                "gender",
+                "nbChildren",
+                "paymentPeriodicity",
+                "products"
+            ],
+            "type": "object",
+            "properties": {
+                "cantonCode": {
+                    "maxLength": 2,
+                    "minLength": 2,
+                    "type": "string"
+                },
+                "regionCode": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "birthYear": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "gender": {
+                    "format": "int32",
+                    "enum": [
+                        1,
+                        2,
+                        4
+                    ],
+                    "type": "integer"
+                },
+                "contractStartDate": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "nbChildren": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "paymentPeriodicity": {
+                    "format": "int32",
+                    "enum": [
+                        1,
+                        2,
+                        4,
+                        9
+                    ],
+                    "type": "integer"
+                },
+                "collective": {
+                    "type": "string"
+                },
+                "products": {
+                    "uniqueItems": false,
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SelectedProducts"
+                    }
+                }
+            }
+        },
+        "SelectedProducts": {
+            "required": [
+                "groupCode",
+                "category",
+                "insuranceClass",
+                "premiumGross",
+                "accidentIncluded"
+            ],
+            "type": "object",
+            "properties": {
+                "groupCode": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "category": {
+                    "maxLength": 10,
+                    "minLength": 1,
+                    "type": "string"
+                },
+                "insuranceClass": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "premiumGross": {
+                    "format": "double",
+                    "minimum": 0,
+                    "type": "number"
+                },
+                "accidentIncluded": {
+                    "type": "boolean"
+                },
+                "franchise": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "pecunia": {
+                    "$ref": "#/definitions/PecuniaProductCustomFields"
+                }
+            }
+        },
+        "PecuniaProductCustomFields": {
+            "required": [
+                "delay",
+                "amount"
+            ],
+            "type": "object",
+            "properties": {
+                "delay": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "amount": {
+                    "format": "double",
+                    "minimum": 0,
+                    "type": "number"
+                }
+            }
+        },
+        "FamilyDiscountContext": {
+            "required": [
+                "cantonCode",
+                "regionCode",
+                "nbChildren",
+                "paymentPeriodicity"
+            ],
+            "type": "object",
+            "properties": {
+                "cantonCode": {
+                    "maxLength": 2,
+                    "minLength": 2,
+                    "type": "string"
+                },
+                "regionCode": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "contractStartDate": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "nbChildren": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "paymentPeriodicity": {
+                    "format": "int32",
+                    "enum": [
+                        1,
+                        2,
+                        4,
+                        9
+                    ],
+                    "type": "integer"
+                },
+                "collective": {
+                    "type": "string"
+                },
+                "members": {
+                    "uniqueItems": false,
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Member"
+                    }
+                }
+            }
+        },
+        "Member": {
+            "required": [
+                "birthYear",
+                "gender",
+                "products"
+            ],
+            "type": "object",
+            "properties": {
+                "index": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "birthYear": {
+                    "format": "int32",
+                    "type": "integer"
+                },
+                "gender": {
+                    "format": "int32",
+                    "enum": [
+                        1,
+                        2,
+                        4
+                    ],
+                    "type": "integer"
+                },
+                "products": {
+                    "uniqueItems": false,
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SelectedProducts"
+                    }
+                }
+            }
+        }
+    }
+}
