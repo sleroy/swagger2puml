@@ -26,8 +26,47 @@ interface {{interfaceName}} {
 
 {{/interfaceDiagrams}}
 
+{{#operationDiagrams}}
+    abstract {{operationName}} {
+    {{#hasPathParams}}
+        .. path params ..
+    {{#pathParams}}
+        {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
+    {{/pathParams}}
+    {{/hasPathParams}}
+    {{#hasQueryParams}}
+        .. query params ..
+    {{#queryParams}}
+        {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
+    {{/queryParams}}
+    {{/hasQueryParams}}
+    {{#hasHeaderParams}}
+        .. query params ..
+        {{#headers}}
+            {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
+        {{/headers}}
+    {{/hasHeaderParams}}
+    {{#hasFormParams}}
+        .. form params ..
+    {{#formParams}}
+        {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
+    {{/formParams}}
+    {{/hasFormParams}}
+    {{#body}}
+        .. body ..
+        {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
+    {{/body}}
+        .. responses ..
+    {{#responses}}
+        {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
+    {{/responses}}
+    }
+
+{{/operationDiagrams}}
+
+
 {{#entityRelations}}
-{{sourceClass}} {{#isExtension}}-->{{/isExtension}} {{#isComposition}}*--{{/isComposition}} {{#cardinality}}"{{cardinality}}"{{/cardinality}}  {{targetClass}} 
+{{sourceClass}} {{#isExtension}}-->{{/isExtension}} {{#isExtends}}..>{{/isExtends}} {{#isComposition}}*--{{/isComposition}} {{#cardinality}}"{{cardinality}}"{{/cardinality}}  {{targetClass}}
 {{/entityRelations}}
 
 note as N1

@@ -1,67 +1,38 @@
 package com.kicksolutions.swagger.plantuml.vo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 
- * @author MSANTOSH
- *
+ * @author sleroy
  */
 public class OperationDiagram {
 
-	private String interfaceName;
-	private List<MethodDefinitions> methods;
-	private List<ClassRelation> childClass;
-	private String errorClass;
+    public final List<FieldDefinition> pathParams     = new ArrayList<FieldDefinition>();
+    public final List<FieldDefinition> formParams     = new ArrayList<FieldDefinition>();
+    public final List<FieldDefinition> queryParams    = new ArrayList<FieldDefinition>();
+    public final List<FieldDefinition> responses      = new ArrayList<>();
+    public final List<ClassRelation>   classRelations = new ArrayList<>();
+    public       FieldDefinition       body           = null;
+    public       String                operationName;
 
-	public OperationDiagram() {
-		super();
-	}
+    public List<ClassRelation>   dependencies;
+    public String                parentAPI;
+    public List<FieldDefinition> headers = new ArrayList<>();
 
-	public OperationDiagram(String interfaceName, List<MethodDefinitions> methods,
-                            List<ClassRelation> childClass, String errorClass) {
-		super();
-		this.interfaceName = interfaceName;
-		this.methods = methods;
-		this.childClass = childClass;
-		this.errorClass = errorClass;
-	}
+    public boolean hasHeaderParams() {
+        return !this.headers.isEmpty();
+    }
 
-	public String getInterfaceName() {
-		return interfaceName;
-	}
+    public boolean hasPathParams() {
+        return !this.pathParams.isEmpty();
+    }
 
-	public void setInterfaceName(String interfaceName) {
-		this.interfaceName = interfaceName;
-	}
+    public boolean hasQueryParams() {
+        return !this.queryParams.isEmpty();
+    }
 
-	public List<MethodDefinitions> getMethods() {
-		return methods;
-	}
-
-	public void setMethods(List<MethodDefinitions> methods) {
-		this.methods = methods;
-	}
-
-	public List<ClassRelation> getChildClass() {
-		return childClass;
-	}
-
-	public void setChildClass(List<ClassRelation> childClass) {
-		this.childClass = childClass;
-	}
-
-	public String getErrorClass() {
-		return errorClass;
-	}
-
-	public void setErrorClass(String errorClass) {
-		this.errorClass = errorClass;
-	}
-
-	@Override
-	public String toString() {
-		return "InterfaceDiagram [interfaceName=" + interfaceName + ", methods=" + methods + ", childClass="
-				+ childClass + ", errorClass=" + errorClass + "]";
-	}
+    public boolean hasFormParams() {
+        return !this.formParams.isEmpty();
+    }
 }

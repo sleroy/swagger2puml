@@ -1,38 +1,66 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>io.github.kicksolutions</groupId>
-		<artifactId>swagger-plantuml-reactor</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
-	</parent>
+    <parent>
+        <groupId>io.github.kicksolutions</groupId>
+        <artifactId>swagger-plantuml-reactor</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
 
-	<groupId>io.github.kicksolutions</groupId>
-	<artifactId>swagger-plantuml-core</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<description>Core POM to generate Plant UML from Swagger</description>
+    <groupId>io.github.kicksolutions</groupId>
+    <artifactId>swagger-plantuml-core</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <description>Core POM to generate Plant UML from Swagger</description>
 
-	<packaging>jar</packaging>
-	<name>swagger2plantuml-core</name>
+    <packaging>jar</packaging>
+    <name>swagger2plantuml-core</name>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.kicksolutions.swagger.Swagger2PlantUML</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
-	<dependencies>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.swagger</groupId>
-			<artifactId>swagger-parser</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.github.spullara.mustache.java</groupId>
-			<artifactId>compiler</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.sourceforge.plantuml</groupId>
-			<artifactId>plantuml</artifactId>
-		</dependency>
-	</dependencies>
+        </plugins>
+    </build>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-parser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spullara.mustache.java</groupId>
+            <artifactId>compiler</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.sourceforge.plantuml</groupId>
+            <artifactId>plantuml</artifactId>
+        </dependency>
+
+    </dependencies>
 </project>
