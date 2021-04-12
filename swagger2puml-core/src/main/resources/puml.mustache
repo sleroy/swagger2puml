@@ -8,23 +8,29 @@ skinparam class {
 	BorderColor DimGray
 }
 
+package "Domain classes" #E0E0E0 {
 {{#classDiagrams}}
-{{#isClass}}class{{/isClass}} {{^isClass}}enum{{/isClass}} {{className}} {{#superClass}} < ? extends {{superClass}}> {{/superClass}}{
+    {{#isClass}}class{{/isClass}} {{^isClass}}enum{{/isClass}} {{className}} {{#superClass}} < ? extends {{superClass}}> {{/superClass}}{
 	 {{#fields}}	
 	 - {{#name}}{{name}}{{/name}} {{#dataType}}<b>:{{dataType}}</b>{{/dataType}} 
 	 {{/fields}}
 }
 
 {{/classDiagrams}}
+}
 
+
+package "API" {
+package "API Definitions" #d9f9fc {
 {{#interfaceDiagrams}}
 interface {{interfaceName}} {
 	 {{#methods}}
 	 + <i>{{methodDefinition}}</i><b>:{{returnType}}</b> {{#errorClass}} <b><color:red> throws {{errorClass}} </color> </b>{{/errorClass}}
 	 {{/methods}}
 }
-
 {{/interfaceDiagrams}}
+}
+
 
 {{#operationDiagrams}}
     abstract {{operationName}} {
@@ -63,6 +69,7 @@ interface {{interfaceName}} {
     }
 
 {{/operationDiagrams}}
+}
 
 
 {{#entityRelations}}
