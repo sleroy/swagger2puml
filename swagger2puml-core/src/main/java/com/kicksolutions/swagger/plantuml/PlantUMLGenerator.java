@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
+import net.sourceforge.plantuml.OptionFlags;
 
 /**
  * MSANTOSH
@@ -69,6 +70,11 @@ public class PlantUMLGenerator {
      * @throws InterruptedException
      */
     private void generateUMLDiagram(String pumlLocation, File targetLocation) throws IOException, InterruptedException {
-        net.sourceforge.plantuml.Run.main(new String[]{"-tsvg", "-o", targetLocation.getAbsolutePath(), "-I", pumlLocation});
+        OptionFlags.getInstance().setSystemExit(false);
+        System.out.println("Generation PNG");
+        net.sourceforge.plantuml.Run.main(new String[]{"-tpng", "-o", targetLocation.getAbsolutePath(), "-I", pumlLocation});
+        System.out.println("Generation SVG");
+        net.sourceforge.plantuml.Run.main(new String[]{ "-tsvg", "-o", targetLocation.getAbsolutePath(), "-I", pumlLocation});
+
     }
 }
