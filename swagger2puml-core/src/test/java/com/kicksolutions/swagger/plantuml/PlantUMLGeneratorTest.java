@@ -9,7 +9,13 @@ import java.io.File;
 
 @Ignore
 public class PlantUMLGeneratorTest {
-
+    @Test
+    public void testPetstoreFull() {
+        final PlantUMLGenerator plantUMLGenerator = new PlantUMLGenerator();
+        final File              file              = new File("target/petstore/full");
+        file.mkdirs();
+        plantUMLGenerator.transformSwagger2Puml("src/test/resources/petstore-simple.json", file.getPath(), false, true, true, GenerationMode.full);
+    }
     @Test
     public void testDiagramFull() {
         final PlantUMLGenerator plantUMLGenerator = new PlantUMLGenerator();

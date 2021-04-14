@@ -667,8 +667,7 @@ public class PlantUMLCodegen {
      */
     private String getInterfaceName(List<String> tags, Operation operation, String uri) {
         String interfaceName;
-
-        if (!tags.isEmpty()) {
+        if (tags != null && !tags.isEmpty()) {
             interfaceName = toTitleCase(tags.get(0).replaceAll(" ", ""));
         } else if (StringUtils.isNotEmpty(operation.getOperationId())) {
             interfaceName = toTitleCase(operation.getOperationId());
