@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.kicksolutions.swagger.GenerationMode;
 import com.kicksolutions.swagger.plantuml.vo.*;
 import io.swagger.models.*;
 import io.swagger.models.parameters.*;
@@ -33,25 +34,27 @@ import io.swagger.models.properties.StringProperty;
  */
 public class PlantUMLCodegen {
 
-    private static final Logger  LOGGER                      = Logger.getLogger(PlantUMLCodegen.class.getName());
-    private static final String  CARDINALITY_ONE_TO_MANY     = "1..*";
-    private static final String  CARDINALITY_NONE_TO_MANY    = "0..*";
-    private static final String  CARDINALITY_ONE_TO_ONE      = "1..1";
-    private static final String  CARDINALITY_NONE_TO_ONE     = "0..1";
-    private final        Swagger swagger;
-    private final        File    targetLocation;
-    private              boolean generateDefinitionModelOnly = false;
-    private              boolean includeCardinality          = true;
+    private static final Logger         LOGGER                      = Logger.getLogger(PlantUMLCodegen.class.getName());
+    private static final String         CARDINALITY_ONE_TO_MANY     = "1..*";
+    private static final String         CARDINALITY_NONE_TO_MANY    = "0..*";
+    private static final String         CARDINALITY_ONE_TO_ONE      = "1..1";
+    private static final String         CARDINALITY_NONE_TO_ONE     = "0..1";
+    private final        Swagger        swagger;
+    private final        File           targetLocation;
+    private              boolean        generateDefinitionModelOnly = false;
+    private       boolean        includeCardinality          = true;
+    private final GenerationMode mode;
 
     /**
      *
      */
     public PlantUMLCodegen(Swagger swagger, File targetLocation, boolean generateDefinitionModelOnly,
-                           boolean includeCardinality) {
+                           boolean includeCardinality, final GenerationMode mode) {
         this.swagger = swagger;
         this.targetLocation = targetLocation;
-        this.generateDefinitionModelOnly = generateDefinitionModelOnly;
+        this.generateDefinitionModelOnly = generateDefinitionModelOnly || mode == GenerationMode.domain;
         this.includeCardinality = includeCardinality;
+        this.mode = mode;
     }
 
     /**
@@ -97,23 +100,28 @@ public class PlantUMLCodegen {
         additionalProperties.put("title", swagger.getInfo().getTitle());
         additionalProperties.put("version", swagger.getInfo().getVersion());
 
-        List<ClassDiagram> classDiagrams = processSwaggerModels(swagger);
-        additionalProperties.put("classDiagrams", classDiagrams);
-
-        List<InterfaceDiagram> interfaceDiagrams = new ArrayList<>();
-        List<OperationDiagram> operationDiagrams = new ArrayList<>();
-
-        if (!generateDefinitionModelOnly) {
-            final DiagramModel diagramModel = processSwaggerPaths(swagger);
-            interfaceDiagrams.addAll(diagramModel.interfaceDiagrams);
-            operationDiagrams.addAll(diagramModel.operationDiagrams);
-
-            additionalProperties.put("interfaceDiagrams", interfaceDiagrams);
-            additionalProperties.put("operationDiagrams", operationDiagrams);
-
+        List<ClassDiagram> classDiagrams = Collections.emptyList();
+        if ( mode == GenerationMode.full || mode == GenerationMode.domain) {
+            classDiagrams = processSwaggerModels(swagger);
+            additionalProperties.put("classDiagrams", classDiagrams);
         }
-        // Compute all relationships
-        additionalProperties.put("entityRelations", computeAllRelations(classDiagrams, interfaceDiagrams, operationDiagrams));
+
+        if ( mode == GenerationMode.api || mode == GenerationMode.full) {
+            List<InterfaceDiagram> interfaceDiagrams = new ArrayList<>();
+            List<OperationDiagram> operationDiagrams = new ArrayList<>();
+
+            if (!generateDefinitionModelOnly) {
+                final DiagramModel diagramModel = processSwaggerPaths(swagger);
+                interfaceDiagrams.addAll(diagramModel.interfaceDiagrams);
+                operationDiagrams.addAll(diagramModel.operationDiagrams);
+
+                additionalProperties.put("interfaceDiagrams", interfaceDiagrams);
+                additionalProperties.put("operationDiagrams", operationDiagrams);
+
+            }
+            // Compute all relationships
+            additionalProperties.put("entityRelations", computeAllRelations(classDiagrams, interfaceDiagrams, operationDiagrams));
+        }
 
         LOGGER.exiting(LOGGER.getName(), "preprocessSwagger");
 
@@ -121,10 +129,10 @@ public class PlantUMLCodegen {
     }
 
     /**
-     *
-     * @param classDiagrams
-     * @param interfaceDiagrams
-     * @return
+     * Compute all relations
+     * @param classDiagrams the class diagrams
+     * @param interfaceDiagrams the interface diagrams
+     * @return the list of class relations
      */
     private List<ClassRelation> computeAllRelations(List<ClassDiagram> classDiagrams,
                                                     List<InterfaceDiagram> interfaceDiagrams,
@@ -269,7 +277,7 @@ public class PlantUMLCodegen {
                     fieldDefinition.setReturnType(obtainSimpleTypeName(formParameter.getType(), formParameter.getFormat()));
                 }
                 interfaceDiagram.formParams.add(fieldDefinition);
-            }  else if (parameter instanceof HeaderParameter) {
+            } else if (parameter instanceof HeaderParameter) {
                 HeaderParameter formParameter = (HeaderParameter) parameter;
                 fieldDefinition.setFieldName(parameter.getName());
                 fieldDefinition.required = parameter.getRequired();
@@ -277,7 +285,7 @@ public class PlantUMLCodegen {
                     fieldDefinition.setReturnType(obtainSimpleTypeName(formParameter.getType(), formParameter.getFormat()));
                 }
                 interfaceDiagram.headers.add(fieldDefinition);
-            }else {
+            } else {
                 BodyParameter bodyParameter = (BodyParameter) parameter;
                 fieldDefinition.setFieldName("payload");
                 fieldDefinition.required = parameter.getRequired();

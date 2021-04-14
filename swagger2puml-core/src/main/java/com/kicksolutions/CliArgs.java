@@ -1,6 +1,7 @@
 package com.kicksolutions;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  */
@@ -8,7 +9,7 @@ public class CliArgs {
 
     private String[] args = null;
 
-    private HashMap<String, String> parsedCliArguments = new HashMap<String, String>();
+    private Map<String, String> parsedCliArguments = new HashMap<String, String>();
     
     public CliArgs(String[] args){
         parse(args);

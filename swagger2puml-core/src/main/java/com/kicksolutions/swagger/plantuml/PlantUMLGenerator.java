@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.kicksolutions.swagger.GenerationMode;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
 import net.sourceforge.plantuml.OptionFlags;
@@ -22,9 +23,10 @@ public class PlantUMLGenerator {
     /**
      * @param specFile
      * @param output
+     * @param mode
      */
     public void transformSwagger2Puml(String specFile, String output, boolean generateDefinitionModelOnly, boolean includeCardinality,
-                                      boolean generateSvg) {
+                                      boolean generateSvg, final GenerationMode mode) {
         LOGGER.entering(LOGGER.getName(), "transformSwagger2Puml");
 
         File swaggerSpecFile = new File(specFile);
@@ -35,28 +37,31 @@ public class PlantUMLGenerator {
         if (isValidSwaggerPath && isValidOutputPath) {
 
             Swagger swaggerObject = new SwaggerParser().read(swaggerSpecFile.getAbsolutePath());
-            PlantUMLCodegen codegen = new PlantUMLCodegen(swaggerObject, targetLocation, generateDefinitionModelOnly,
-                                                          includeCardinality);
+            PlantUMLCodegen codegen = new PlantUMLCodegen(swaggerObject,
+                                                          targetLocation,
+                                                          generateDefinitionModelOnly,
+                                                          includeCardinality,
+                                                          mode);
             String pumlPath = null;
 
             try {
                 LOGGER.info("Processing File --> " + specFile);
                 pumlPath = codegen.generatePuml();
-                LOGGER.info("Sucessfully Create PUML !!!");
+                LOGGER.info("Successfully Create PUML !!!");
 
                 if (generateSvg) {
                     generateUMLDiagram(pumlPath, targetLocation);
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, e.getMessage(), e);
-                throw new RuntimeException(e);
+                throw new GenerationException(e);
             }
         } else {
             if (!isValidSwaggerPath) {
-                throw new RuntimeException("Invalid Swagger path");
+                throw new GenerationException("Invalid Swagger path");
             }
             if (!isValidOutputPath) {
-                throw new RuntimeException("Invalid Output path");
+                throw new GenerationException("Invalid Output path");
             }
         }
 
@@ -74,7 +79,7 @@ public class PlantUMLGenerator {
         System.out.println("Generation PNG");
         net.sourceforge.plantuml.Run.main(new String[]{"-tpng", "-o", targetLocation.getAbsolutePath(), "-I", pumlLocation});
         System.out.println("Generation SVG");
-        net.sourceforge.plantuml.Run.main(new String[]{ "-tsvg", "-o", targetLocation.getAbsolutePath(), "-I", pumlLocation});
+        net.sourceforge.plantuml.Run.main(new String[]{"-tsvg", "-o", targetLocation.getAbsolutePath(), "-I", pumlLocation});
 
     }
 }
