@@ -1,5 +1,6 @@
 package com.kicksolutions.swagger;
 
+import java.io.IOException;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +30,7 @@ public class Swagger2PlantUML {
     /**
      * @param args
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Swagger2PlantUML swagger2PlantUML = new Swagger2PlantUML();
         swagger2PlantUML.init(args);
     }
@@ -37,7 +38,7 @@ public class Swagger2PlantUML {
     /**
      * @param args
      */
-    private void init(String[] args) {
+    private void init(String[] args) throws IOException {
         LOGGER.entering(LOGGER.getName(), "init");
 
         CliArgs        cliArgs       = new CliArgs(args);
@@ -51,7 +52,7 @@ public class Swagger2PlantUML {
         boolean generateSvg        = Boolean.parseBoolean(cliArgs.getArgumentValue("-generateSvg", "true"));
 
         if (StringUtils.isNotEmpty(specFile) && StringUtils.isNotEmpty(output)) {
-            process(specFile, output, generateDefinitionModelOnly, includeCardinality, generateSvg, mode);
+            process(specFile, output, includeCardinality, generateSvg, mode);
         } else {
             LOGGER.severe(USAGE);
         }
@@ -64,9 +65,9 @@ public class Swagger2PlantUML {
      * @param output
      * @param mode
      */
-    private void process(String specFile, String output, boolean generateDefinitionModelOnly, boolean includeCardinality,
-                         boolean generateSvg, final GenerationMode mode) {
+    private void process(String specFile, String output, boolean includeCardinality,
+                         boolean generateSvg, final GenerationMode mode) throws IOException {
         PlantUMLGenerator generator = new PlantUMLGenerator();
-        generator.transformSwagger2Puml(specFile, output, generateDefinitionModelOnly, includeCardinality, generateSvg, mode);
+        generator.transformSwagger2Puml(specFile, output, includeCardinality, generateSvg, mode);
     }
 }

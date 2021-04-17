@@ -1,39 +1,55 @@
 @startuml
 hide empty members
-set namespaceSeparator none
+set namespaceSeparator ::
 
 skinparam class {
-	BackgroundColor PaleGreen
 	ArrowColor RoyalBlue
 	BorderColor DimGray
 }
 
-package "Domain classes" #E0E0E0 {
+{{#graphPackages}}
+    package "{{name}}" {{color}} {
+
+    }
+{{/graphPackages}}
+
+
 {{#classDiagrams}}
-    {{#isClass}}class{{/isClass}} {{^isClass}}enum{{/isClass}} {{className}} {{#superClass}} < ? extends {{superClass}}> {{/superClass}}{
-	 {{#fields}}	
-	 - {{#name}}{{name}}{{/name}} {{#dataType}}<b>:{{dataType}}</b>{{/dataType}} 
+    {{#domain}}
+        package "{{domain}}" {
+    {{/domain}}
+    class "{{description}}"  as {{className}}  {{#superClass}} < ? extends {{superClass}}> {{/superClass}} << ({{stereotype}},{{color}}) >> {{backgroundColor}} {
+	 {{#fields}}
+	 - {{#name}}{{name}}{{/name}} {{#dataType}}<b>:{{dataType}}</b>{{/dataType}}
 	 {{/fields}}
+    {{#domain}}
+        }
+    {{/domain}}
 }
-
 {{/classDiagrams}}
-}
 
 
-package "API" {
-package "API Definitions" #d9f9fc {
+
 {{#interfaceDiagrams}}
+    {{#domain}}
+        package "{{domain}}" {
+    {{/domain}}
 interface {{interfaceName}} {
 	 {{#methods}}
 	 + <i>{{methodDefinition}}</i><b>:{{returnType}}</b> {{#errorClass}} <b><color:red> throws {{errorClass}} </color> </b>{{/errorClass}}
 	 {{/methods}}
+    {{#domain}}
+        }
+    {{/domain}}
 }
 {{/interfaceDiagrams}}
-}
 
 
 {{#operationDiagrams}}
-    abstract {{operationName}} {
+    {{#domain}}
+        package "{{domain}}" {
+    {{/domain}}
+    class "{{description}}"  as {{className}}  {{#superClass}} < ? extends {{superClass}}> {{/superClass}} << ({{stereotype}},{{color}}) >> {{backgroundColor}} {
     {{#hasPathParams}}
         .. path params ..
     {{#pathParams}}
@@ -64,12 +80,14 @@ interface {{interfaceName}} {
     {{/body}}
         .. responses ..
     {{#responses}}
-        {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
+        {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b><i> {{mediaType}}</i>
     {{/responses}}
     }
-
+    {{#domain}}
+        }
+    {{/domain}}
 {{/operationDiagrams}}
-}
+
 
 
 {{#entityRelations}}
