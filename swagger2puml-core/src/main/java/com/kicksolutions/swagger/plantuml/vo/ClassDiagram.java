@@ -11,8 +11,8 @@ public class ClassDiagram {
 
     private String              className;
     private boolean             isClass;
-    private String              description;
-    private List<ClassMembers>  fields;
+    private String             description;
+    private List<Field>        fields;
     private List<Relationship> childClass;
     private String              superClass;
     private String              color           = "#FF7700";
@@ -20,7 +20,7 @@ public class ClassDiagram {
     private String              backgroundColor = "#FFFFFF";
     private String              domain;
 
-    public ClassDiagram(String className, String description, List<ClassMembers> fields,
+    public ClassDiagram(String className, String description, List<Field> fields,
                         List<Relationship> childClass, boolean isClass, String superClass) {
         super();
         this.className = className;
@@ -75,11 +75,11 @@ public class ClassDiagram {
         this.description = description;
     }
 
-    public List<ClassMembers> getFields() {
+    public List<Field> getFields() {
         return fields;
     }
 
-    public void setFields(List<ClassMembers> fields) {
+    public void setFields(List<Field> fields) {
         this.fields = fields;
     }
 

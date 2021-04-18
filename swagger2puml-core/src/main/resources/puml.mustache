@@ -34,7 +34,7 @@ skinparam class {
     {{#domain}}
         package "{{domain}}" {
     {{/domain}}
-interface {{interfaceName}} {
+    interface "{{description}}"  as {{className}}  {{#superClass}} < ? extends {{superClass}}> {{/superClass}} << ({{stereotype}},{{color}}) >> {{backgroundColor}} {
 	 {{#methods}}
 	 + <i>{{methodDefinition}}</i><b>:{{returnType}}</b> {{#errorClass}} <b><color:red> throws {{errorClass}} </color> </b>{{/errorClass}}
 	 {{/methods}}
@@ -50,6 +50,12 @@ interface {{interfaceName}} {
         package "{{domain}}" {
     {{/domain}}
     class "{{description}}"  as {{className}}  {{#superClass}} < ? extends {{superClass}}> {{/superClass}} << ({{stereotype}},{{color}}) >> {{backgroundColor}} {
+    {{#hasHeaderParams}}
+        .. headers ..
+        {{#headers}}
+            {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
+        {{/headers}}
+    {{/hasHeaderParams}}
     {{#hasPathParams}}
         .. path params ..
     {{#pathParams}}
@@ -62,22 +68,16 @@ interface {{interfaceName}} {
         {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
     {{/queryParams}}
     {{/hasQueryParams}}
-    {{#hasHeaderParams}}
-        .. query params ..
-        {{#headers}}
-            {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
-        {{/headers}}
-    {{/hasHeaderParams}}
     {{#hasFormParams}}
         .. form params ..
     {{#formParams}}
         {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
     {{/formParams}}
     {{/hasFormParams}}
-    {{#body}}
+    {{#bodyDefinitions}}
         .. body ..
-        {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b>
-    {{/body}}
+        <i>{{key}}</i> {{#value.required}}*{{/value.required}} <i>{{value.fieldName}}</i><b>:{{value.returnType}}</b>
+    {{/bodyDefinitions}}
         .. responses ..
     {{#responses}}
         {{#required}}*{{/required}} <i>{{fieldName}}</i><b>:{{returnType}}</b><i> {{mediaType}}</i>

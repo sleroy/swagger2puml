@@ -14,10 +14,11 @@ public class EntityFactory {
         this.graph = graph;
     }
 
-    public ResourceEntity newResourceEntity(final Operation operation, final String tag, HttpMethod httpMethod) {
+    public ResourceEntity newResourceEntity(final String tag) {
         final String         resourceDotId  = NamingUtils.generateResourceId(tag);
         final String         resourceName   = NamingUtils.generateResourceName(tag);
         final ResourceEntity resourceEntity = graph.newResource(resourceDotId, tag, resourceName);
+        graph.addEntity(resourceEntity);
         return resourceEntity;
 
     }

@@ -101,12 +101,11 @@ public class PlantUMLCodegen {
         additionalProperties.put("title", swagger.getInfo().getTitle());
         additionalProperties.put("version", swagger.getInfo().getVersion());
 
-        final ApiProcessGraphGeneration apiProcessGraphGeneration = new ApiProcessGraphGeneration(domainClassGeneration, apiGeneration);
-        Graph                           graph                     = apiProcessGraphGeneration.process(swagger);
-
-        List<ClassDiagram> classDiagrams = apiProcessGraphGeneration.generateClassDiagrams(graph);
-
-        apiProcessGraphGeneration.getGraphAdapter().adapt(additionalProperties, graph);
+        final ApiProcessGraphGeneration apiProcessGraphGeneration = new ApiProcessGraphGeneration(domainClassGeneration,
+                                                                                                  apiGeneration,
+                                                                                                  swagger);
+        apiProcessGraphGeneration.process();
+        apiProcessGraphGeneration.adapt(additionalProperties);
 
         LOGGER.exiting(LOGGER.getName(), "preprocessSwagger");
 
@@ -151,7 +150,7 @@ public class PlantUMLCodegen {
         return modelRelations;
     }
 
-
+/*
     private List<Relationship> getAllInterfacesRelations(List<Entity> interfaceDiagrams) {
         List<Relationship> modelRelations = new ArrayList<>();
 
@@ -167,6 +166,6 @@ public class PlantUMLCodegen {
 
         return modelRelations;
     }
-
+*/
 
 }

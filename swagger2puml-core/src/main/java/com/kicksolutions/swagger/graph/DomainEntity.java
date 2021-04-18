@@ -1,17 +1,25 @@
 package com.kicksolutions.swagger.graph;
 
-import com.kicksolutions.swagger.plantuml.vo.ClassMembers;
+import com.kicksolutions.swagger.plantuml.vo.Field;
 
 import java.util.List;
 
 public class DomainEntity extends Entity {
-    public String              description;
-    public List<ClassMembers>  classMembers;
-    public List<Relationship> childClasses;
-    public String superClass;
+    private String             description;
+    private List<Relationship> childClasses;
+    private String      superClass;
+    private List<Field> fields;
 
     public DomainEntity(final String dotId, final String name) {
         super(dotId, name);
+    }
+
+    public List<Field> getFields() {
+        return fields;
+    }
+
+    public void setFields(final List<Field> fields) {
+        this.fields = fields;
     }
 
     public String getSuperClass() {
@@ -30,13 +38,6 @@ public class DomainEntity extends Entity {
         this.childClasses = childClasses;
     }
 
-    public List<ClassMembers> getClassMembers() {
-        return classMembers;
-    }
-
-    public void setClassMembers(final List<ClassMembers> classMembers) {
-        this.classMembers = classMembers;
-    }
 
     public String getDescription() {
         return description;

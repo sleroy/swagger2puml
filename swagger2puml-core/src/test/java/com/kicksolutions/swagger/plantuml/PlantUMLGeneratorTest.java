@@ -71,10 +71,6 @@ public class PlantUMLGeneratorTest {
 
     }
 
-    @Test
-    public void testPlantuML() throws IOException, InterruptedException {
-        net.sourceforge.plantuml.Run.main(new String[]{"-help"});
-    }
 
 
 }

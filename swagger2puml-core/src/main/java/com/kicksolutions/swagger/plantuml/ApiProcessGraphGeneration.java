@@ -12,9 +12,8 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.PathItem.HttpMethod;
 import io.swagger.v3.oas.models.Paths;
-import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.headers.Header;
+import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
@@ -36,10 +35,12 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     private final        boolean       domainClassGeneration;
     private final        boolean       apiGeneration;
     private final        EntityFactory entityFactory;
+    private final        OpenAPI       swagger;
 
-    public ApiProcessGraphGeneration(final boolean domainClassGeneration, final boolean apiGeneration) {
+    public ApiProcessGraphGeneration(final boolean domainClassGeneration, final boolean apiGeneration, final OpenAPI swagger) {
         this.domainClassGeneration = domainClassGeneration;
         this.apiGeneration = apiGeneration;
+        this.swagger = swagger;
         graph = new Graph();
         graph.addGraphPackage(API_DEFINITION, "#lightgray-white");
         graph.addGraphPackage(NamingUtils.DOMAIN, "#lightgray-white");
@@ -47,7 +48,7 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
 
     }
 
-    public Graph process(final OpenAPI swagger) {
+    public Graph process() {
 
         // Browse tags to create resources
         createResources(swagger);
@@ -58,29 +59,42 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
     private void createResources(final OpenAPI swagger) {
+        Map<String, ResourceEntity> resourceEntityMap = new HashMap<>();
+
         for (Entry<String, PathItem> paths : swagger.getPaths().entrySet()) {
             final PathItem pathItem = paths.getValue();
             if (pathItem == null) continue;
             final Map<HttpMethod, Operation> methodOperationMap = pathItem.readOperationsMap();
             if (methodOperationMap == null) continue;
 
+
             methodOperationMap.forEach((httpMethod, operation) -> {
                 final List<String> tags = operation.getTags();
                 if (tags == null) return;
+                // We attach the operation to the tags
                 tags.forEach(tag -> {
-                    createResourceEntity(httpMethod, operation, tag);
+                    if (!resourceEntityMap.containsKey(tag)) {
+                        resourceEntityMap.put(tag, createResourceEntity(httpMethod, operation, tag));
+                    } else {
+                        final ResourceEntity resourceEntity = resourceEntityMap.get(tag);
+                        resourceEntity.dependencies.addAll(getInterfaceRelations(operation, resourceEntity.getErrorClass(),
+                                                                                 resourceEntity));
+                        resourceEntity.methods.addAll(getInterfaceMethods(httpMethod, operation));
+                    }
+
                 });
             });
 
         }
     }
 
-    private void createResourceEntity(final HttpMethod httpMethod, final Operation operation, final String tag) {
-        ResourceEntity resourceEntity = entityFactory.newResourceEntity(operation, tag, httpMethod);
+    private ResourceEntity createResourceEntity(final HttpMethod httpMethod, final Operation operation, final String tag) {
+        ResourceEntity resourceEntity = entityFactory.newResourceEntity(tag);
         String         errorClassName = getErrorClassName(operation);
-        resourceEntity.dependencies = (getInterfaceRelations(operation, errorClassName));
+        resourceEntity.dependencies = (getInterfaceRelations(operation, errorClassName, resourceEntity));
         resourceEntity.setErrorClass(errorClassName);
         resourceEntity.setMethods(getInterfaceMethods(httpMethod, operation));
+        return resourceEntity;
     }
 
     private void processSwaggerPaths(@NotNull OpenAPI swagger) {
@@ -100,15 +114,15 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
             for (Entry<PathItem.HttpMethod, io.swagger.v3.oas.models.Operation> operationEntry : operations.entrySet()) {
                 //diagramModel.interfaceDiagrams.add(getInterfaceDiagram(operationEntry, uri));
                 //diagramModel.operationDiagrams.add();
-                newOperationEntity(operationEntry, uri);
+                createOperationEntity(operationEntry, uri);
             }
         }
 
         LOGGER.exiting(LOGGER.getName(), "processSwaggerPaths");
     }
 
-    private @NotNull OperationEntity newOperationEntity(final @NotNull Entry<PathItem.HttpMethod, io.swagger.v3.oas.models.Operation> operationEntry,
-                                                        final @NotNull String uri) {
+    private @NotNull OperationEntity createOperationEntity(final @NotNull Entry<PathItem.HttpMethod, io.swagger.v3.oas.models.Operation> operationEntry,
+                                                           final @NotNull String uri) {
         LOGGER.entering(LOGGER.getName(), "getOperationInterface");
         PathItem.HttpMethod                method    = operationEntry.getKey();
         io.swagger.v3.oas.models.Operation operation = operationEntry.getValue();
@@ -142,9 +156,18 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
         }
 
         for (Entry<String, ApiResponse> responseEntry : operation.getResponses().entrySet()) {
-            final ApiResponse responseEntryValue = responseEntry.getValue();
-            final Content     content            = responseEntryValue.getContent();
-
+            final ApiResponse         responseEntryValue = responseEntry.getValue();
+            final Content             content            = responseEntryValue.getContent();
+            final Map<String, Header> headers            = responseEntry.getValue().getHeaders();
+            if (headers != null) {
+                headers.entrySet().forEach(entry -> {
+                    final FieldDefinition fieldDefinition = new FieldDefinition();
+                    fieldDefinition.setFieldName(entry.getKey());
+                    fieldDefinition.required = true;
+                    fieldDefinition.setReturnType("string");
+                    operationEntity.headers.add(fieldDefinition);
+                });
+            }
             for (Entry<String, MediaType> responseSwgDef : content.entrySet()) {
                 convertResponse(operationEntity, responseEntry, responseSwgDef);
             }
@@ -157,13 +180,14 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
 
     private void convertResponse(final OperationEntity operationEntity, final Entry<String, ApiResponse> responseEntry, final Entry<String,
             MediaType> responseSwgDef) {
+
+        final String             mediaType          = responseSwgDef.getKey();
         final ResponseDefinition responseDefinition = new ResponseDefinition();
         responseDefinition.setFieldName(responseEntry.getKey());
-        final String mediaType = responseSwgDef.getKey();
         responseDefinition.setMediaType(mediaType);
 
         final MediaType value = responseSwgDef.getValue();
-        responseDefinition.setReturnType(TypingUtils.resolveType(operationEntity, value.getSchema()));
+        responseDefinition.setReturnType(TypingUtils.resolveType(operationEntity, value.getSchema(), true));
         operationEntity.responses.add(responseDefinition);
     }
 
@@ -187,12 +211,14 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
         operationEntity.dependencies.add(classRelation);
     }
 
-    private void convertRequestBody(final OperationEntity operationEntity, @NotNull final RequestBody bodyParameter,
+    private void convertRequestBody(final OperationEntity operationEntity,
+                                    @NotNull final RequestBody bodyParameter,
                                     final Entry<String, MediaType> stringMediaTypeEntry) {
         final FieldDefinition fieldDefinition = new FieldDefinition();
         fieldDefinition.setFieldName("payload");
         fieldDefinition.required = bodyParameter.getRequired() != null && bodyParameter.getRequired();
-        fieldDefinition.setReturnType(TypingUtils.resolveType(operationEntity, stringMediaTypeEntry.getValue().getSchema()));
+        fieldDefinition.setReturnType(TypingUtils.resolveType(operationEntity, stringMediaTypeEntry.getValue()
+                                                                                                   .getSchema(), fieldDefinition.required));
         operationEntity.body.put(stringMediaTypeEntry.getKey(), fieldDefinition);
     }
 
@@ -204,7 +230,8 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
                 fieldDefinition.setFieldName(parameter.getName());
                 fieldDefinition.required = parameter.getRequired() != null && parameter.getRequired();
                 if (pathParameter.getSchema() != null) {
-                    fieldDefinition.setReturnType(TypingUtils.resolveType(operationEntity, parameter.getSchema()));
+                    fieldDefinition.setReturnType(TypingUtils.resolveType(operationEntity, parameter.getSchema(),
+                                                                          fieldDefinition.required));
                 } else {
                     fieldDefinition.setReturnType("unknown");
                 }
@@ -215,22 +242,27 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
                 fieldDefinition.setFieldName(parameter.getName());
                 fieldDefinition.required = parameter.getRequired() != null && parameter.getRequired();
                 if (queryParameter.getSchema() != null) {
-                    fieldDefinition.setReturnType(TypingUtils.resolveType(operationEntity, parameter.getSchema()));
+                    fieldDefinition.setReturnType(TypingUtils.resolveType(operationEntity, parameter.getSchema(),
+                                                                          fieldDefinition.required));
                 } else {
                     fieldDefinition.setReturnType("unknown");
                 }
                 operationEntity.queryParams.add(fieldDefinition);
                 break;
             case "header":
-                fieldDefinition.setFieldName(parameter.getName());
-                fieldDefinition.required = parameter.getRequired() != null && parameter.getRequired();
-                fieldDefinition.setReturnType(TypingUtils.resolveType(operationEntity, parameter.getSchema()));
-                operationEntity.headers.add(fieldDefinition);
+                convertHeader(operationEntity, parameter, fieldDefinition);
                 break;
             default:
                 LOGGER.log(Level.SEVERE, "Unsupported parameter type " + parameter.getIn());
                 break;
         }
+    }
+
+    private void convertHeader(final OperationEntity operationEntity, final Parameter parameter, final FieldDefinition fieldDefinition) {
+        fieldDefinition.setFieldName(parameter.getName());
+        fieldDefinition.required = parameter.getRequired() != null && parameter.getRequired();
+        fieldDefinition.setReturnType(TypingUtils.resolveType(operationEntity, parameter.getSchema(), fieldDefinition.required));
+        operationEntity.headers.add(fieldDefinition);
     }
 
     private @NotNull String obtainType(final String type, final String s, final String format) {
@@ -284,7 +316,7 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
         return relatedResponses;
     }
 
-    private @NotNull List<Relationship> getInterfaceRelatedResponses(io.swagger.v3.oas.models.@NotNull Operation operation) {
+    private @NotNull List<Relationship> getInterfaceRelatedResponses(io.swagger.v3.oas.models.@NotNull Operation operation, Entity entity) {
         List<Relationship> relatedResponses = new ArrayList<>();
         ApiResponses       responses        = operation.getResponses();
 
@@ -292,31 +324,14 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
             String responseCode = responsesEntry.getKey();
 
             if (!(responseCode.equalsIgnoreCase("default") || Integer.parseInt(responseCode) >= 300)) {
-                //FIXME::Property responseProperty = responsesEntry.getValue().getContent();
-                Property responseProperty = null;
 
-                if (responseProperty instanceof RefProperty) {
-                    Relationship relation = new Relationship();
-                    relation.setTargetClass(((RefProperty) responseProperty).getSimpleRef());
-                    relation.setComposition(false);
-                    relation.setExtension(true);
+                Relationship relation = new Relationship();
+                relation.setTargetClass(TypingUtils.resolveRefType(entity, responsesEntry.getValue().get$ref(), false, true));
+                relation.setComposition(false);
+                relation.setExtension(true);
 
-                    relatedResponses.add(relation);
-                } else if (responseProperty instanceof ArrayProperty) {
-                    ArrayProperty arrayObject           = (ArrayProperty) responseProperty;
-                    Property      arrayResponseProperty = arrayObject.getItems();
-
-                    if (arrayResponseProperty instanceof RefProperty) {
-                        Relationship relation = new Relationship();
-                        relation.setTargetClass(((RefProperty) arrayResponseProperty).getSimpleRef());
-                        relation.setComposition(false);
-                        relation.setExtension(true);
-
-                        relatedResponses.add(relation);
-                    }
-                }
+                relatedResponses.add(relation);
             }
-
         }
 
         return relatedResponses;
@@ -369,10 +384,10 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private @NotNull Set<Relationship> getInterfaceRelations(io.swagger.v3.oas.models.@NotNull Operation operation,
-                                                             String errorClassName) {
+    private @NotNull Set<Relationship> getInterfaceRelations(@NotNull Operation operation,
+                                                             String errorClassName, final Entity entity) {
         Set<Relationship> relations = new HashSet<>();
-        relations.addAll(getInterfaceRelatedResponses(operation));
+        relations.addAll(getInterfaceRelatedResponses(operation, entity));
         relations.addAll(getInterfaceRelatedInputs(operation));
         if (StringUtils.isNotEmpty(errorClassName)) {
             relations.add(getErrorClass(errorClassName));
@@ -523,15 +538,15 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
 
         LOGGER.info("Processing Model " + className);
 
-        String             superClass   = getSuperClass(modelObject);
-        List<ClassMembers> classMembers = getClassMembers(modelObject, modelsMap);
-        final String       dotId        = NamingUtils.newDomainId(className);
+        String superClass = getSuperClass(modelObject);
+
+        final String dotId = NamingUtils.newDomainId(className);
+
         final DomainEntity domainEntity = new DomainEntity(dotId, className);
-        domainEntity.description = modelObject.getDescription();
-        domainEntity.classMembers = classMembers;
-        domainEntity.childClasses = getChildClasses(classMembers, superClass);
-        domainEntity.superClass = superClass;
-        domainEntity.dependencies.addAll(domainEntity.childClasses);
+        domainEntity.setDescription(modelObject.getDescription());
+        domainEntity.setSuperClass(superClass);
+        domainEntity.setFields(getClassMembers(domainEntity, modelObject));
+
         graph.addEntity(domainEntity);
     }
 
@@ -582,12 +597,12 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
         return superClass;
     }
 
-    private @NotNull List<Relationship> getChildClasses(@NotNull List<ClassMembers> classMembers, String superClass) {
+    private @NotNull List<Relationship> getChildClasses(@NotNull List<Field> classMembers, String superClass) {
         LOGGER.entering(LOGGER.getName(), "getChildClasses");
 
         List<Relationship> childClasses = new ArrayList<>();
 
-        for (ClassMembers member : classMembers) {
+        for (Field member : classMembers) {
 
             boolean alreadyExists = false;
 
@@ -613,61 +628,52 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private @NotNull List<ClassMembers> getClassMembers(Model modelObject,
-                                                        @NotNull Map<String, Model> modelsMap) {
+    private @NotNull List<Field> getClassMembers(final @NotNull Entity entity, Schema modelObject) {
         LOGGER.entering(LOGGER.getName(), "getClassMembers");
 
-        List<ClassMembers> classMembers = new ArrayList<>();
-
-        if (modelObject instanceof ModelImpl) {
-            classMembers = getClassMembers((ModelImpl) modelObject, modelsMap);
-        } else if (modelObject instanceof ComposedModel) {
-            classMembers = getClassMembers((ComposedModel) modelObject, modelsMap);
-        } else if (modelObject instanceof ArrayModel) {
-            classMembers = getClassMembers(modelObject, modelsMap);
+        List<Field> classMembers = new ArrayList<>();
+        if (modelObject instanceof ObjectSchema) {
+            ObjectSchema schema = (ObjectSchema) modelObject;
+            classMembers = getClassMembersFromModel(entity, schema);
+        } else if (modelObject instanceof ArraySchema) {
+            // Nothing to do
+        } else if (modelObject instanceof ComposedSchema) {
+            // Nothing to do
+            classMembers = getClassMembersFromComposedModel(entity, (ComposedSchema) modelObject);
+        } else {
+            System.out.println("Unsupported schema " + modelObject.getClass().getName());
         }
-
         LOGGER.exiting(LOGGER.getName(), "getClassMembers");
         return classMembers;
     }
 
-    private @NotNull List<ClassMembers> getClassMembers(Schema arrayModel, Map<String, Schema> modelsMap) {
-        LOGGER.entering(LOGGER.getName(), "getClassMembers-ArrayModel");
-        List<ClassMembers> classMembers = new ArrayList<ClassMembers>();
-        /**
 
-
-         Property propertyObject = arrayModel.getItems();
-
-         if (propertyObject instanceof RefProperty) {
-         classMembers.add(getRefClassMembers((RefProperty) propertyObject));
-         }
-         */
-        LOGGER.exiting(LOGGER.getName(), "getClassMembers-ArrayModel");
-        return classMembers;
-    }
-
-
-    private @NotNull List<ClassMembers> getClassMembers(@NotNull ComposedModel composedModel, @NotNull Map<String, Model> modelsMap) {
+    private @NotNull List<Field> getClassMembersFromComposedModel(@NotNull Entity entity, ComposedSchema composedModel) {
         LOGGER.entering(LOGGER.getName(), "getClassMembers-ComposedModel");
 
-        List<ClassMembers> classMembers = new ArrayList<ClassMembers>();
+        List<Field> classMembers = new ArrayList<Field>();
 
-        Map<String, Property> childProperties = new HashMap<String, Property>();
-
-        if (null != composedModel.getChild()) {
-            childProperties = composedModel.getChild().getProperties();
-        }
-
-        List<Model> allOf = composedModel.getAllOf();
-        for (Model currentModel : allOf) {
-
-            if (currentModel instanceof RefModel) {
-                RefModel refModel = (RefModel) currentModel;
-                childProperties.putAll(modelsMap.get(refModel.getSimpleRef()).getProperties());
-
-                classMembers = convertModelPropertiesToClassMembers(childProperties,
-                                                                    modelsMap.get(refModel.getSimpleRef()), modelsMap);
+        List<Schema> allOf = composedModel.getAllOf();
+        for (Schema currentModel : allOf) {
+            final Map properties = currentModel.getProperties();
+            if (currentModel.getAdditionalProperties() != null) {
+                System.out.println(currentModel.getAdditionalProperties());
+            }
+            final String referencedModel = currentModel.get$ref();
+            if (referencedModel != null) {
+                Relationship relation = new Relationship();
+                relation.setTargetClass(TypingUtils.resolveRefType(entity, referencedModel, false, true));
+                relation.setComposition(false);
+                relation.setExtension(true);
+                entity.dependencies.add(relation);
+                final String componentId = NamingUtils.getComponentId(referencedModel);
+                final Schema schema      = this.swagger.getComponents().getSchemas().get(componentId);
+                if (schema == null) {
+                    LOGGER.log(Level.SEVERE, "Cannot find the type identified by the reference " + referencedModel);
+                }
+                classMembers = convertModelPropertiesToClassMembers(schema.getProperties(), entity, schema.getRequired());
+            } else {
+                classMembers = convertModelPropertiesToClassMembers(properties, entity, currentModel.getRequired());
             }
         }
 
@@ -676,29 +682,28 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private @NotNull List<ClassMembers> getClassMembers(@NotNull ModelImpl model,
-                                                        @NotNull Map<String, Model> modelsMap) {
+    private @NotNull List<Field> getClassMembersFromModel(final @NotNull Entity entity, ObjectSchema model) {
         LOGGER.entering(LOGGER.getName(), "getClassMembers-ModelImpl");
+        List<Field> classMembers = new ArrayList<>();
 
-        List<ClassMembers> classMembers = new ArrayList<>();
-
-        Map<String, Property> modelMembers = model.getProperties();
+        if (model.getAdditionalProperties() != null) {
+            System.out.println(model.getAdditionalProperties());
+        }
+        Map<String, Schema> modelMembers = model.getProperties();
         if (modelMembers != null && !modelMembers.isEmpty()) {
-            classMembers.addAll(convertModelPropertiesToClassMembers(modelMembers, model, modelsMap));
-        } else {
-            Property modelAdditionalProps = model.getAdditionalProperties();
-
-            if (modelAdditionalProps instanceof RefProperty) {
-                classMembers.add(getRefClassMembers((RefProperty) modelAdditionalProps));
-            }
-
-            if (modelAdditionalProps == null) {
-                List<String> enumValues = model.getEnum();
-
-                if (enumValues != null && !enumValues.isEmpty()) {
-                    classMembers.addAll(getEnum(enumValues));
-                }
-            }
+            classMembers = modelMembers.entrySet()
+                                       .stream()
+                                       .map(entry -> {
+                                           final Field field1 = new Field();
+                                           field1.setClassName(entry.getKey());
+                                           field1.setName(entry.getKey());
+                                           final boolean isRequired = model.getRequired() != null && model.getRequired()
+                                                                                                          .contains(entry.getKey());
+                                           field1.setCardinality(isRequired ? "1..1" : "0..1");
+                                           field1.setDataType(TypingUtils.resolveType(entity, entry.getValue(), isRequired));
+                                           return field1;
+                                       })
+                                       .collect(Collectors.toList());
         }
 
         LOGGER.exiting(LOGGER.getName(), "getClassMembers-ModelImpl");
@@ -707,9 +712,9 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private @NotNull ClassMembers getRefClassMembers(@NotNull RefProperty refProperty) {
+    private @NotNull Field getRefClassMembers(@NotNull RefProperty refProperty) {
         LOGGER.entering(LOGGER.getName(), "getRefClassMembers");
-        ClassMembers classMember = new ClassMembers();
+        Field classMember = new Field();
         classMember.setClassName(refProperty.getSimpleRef());
         classMember.setName(" ");
         /**
@@ -723,14 +728,14 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private @NotNull List<ClassMembers> getEnum(@Nullable List<String> enumValues) {
+    private @NotNull List<Field> getEnum(@Nullable List<String> enumValues) {
         LOGGER.entering(LOGGER.getName(), "getEnum");
 
-        List<ClassMembers> classMembers = new ArrayList<>();
+        List<Field> classMembers = new ArrayList<>();
 
         if (enumValues != null && !enumValues.isEmpty()) {
             for (String enumValue : enumValues) {
-                ClassMembers classMember = new ClassMembers();
+                Field classMember = new Field();
                 classMember.setName(enumValue);
                 classMembers.add(classMember);
             }
@@ -741,28 +746,21 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private @NotNull List<ClassMembers> convertModelPropertiesToClassMembers(@NotNull Map<String, Property> modelMembers,
-                                                                             Model modelObject,
-                                                                             @NotNull Map<String, Model> models) {
+    private @NotNull List<Field> convertModelPropertiesToClassMembers(@NotNull Map<String, Schema> modelMembers,
+                                                                      Entity entity, final List required) {
         LOGGER.entering(LOGGER.getName(), "convertModelPropertiesToClassMembers");
 
-        List<ClassMembers> classMembers = new ArrayList<>();
+        List<Field> classMembers = new ArrayList<>();
 
-        for (Map.Entry<String, Property> modelMapObject : modelMembers.entrySet()) {
-            String variablName = modelMapObject.getKey();
+        for (Entry<String, Schema> modelMapObject : modelMembers.entrySet()) {
+            final String  variablName = modelMapObject.getKey();
+            final boolean isRequired  = required != null && required.contains(variablName);
+            final Schema  schema      = modelMapObject.getValue();
 
-            ClassMembers classMemberObject = new ClassMembers();
-            Property     property          = modelMembers.get(variablName);
-
-            if (property instanceof ArrayProperty) {
-                classMemberObject = getClassMember((ArrayProperty) property, modelObject, models, variablName);
-            } else if (property instanceof RefProperty) {
-                classMemberObject = getClassMember((RefProperty) property, models, modelObject, variablName);
-            } else {
-                //classMemberObject.setDataType(TypeUtils);
-                classMemberObject.setName(variablName);
-            }
-
+            Field classMemberObject = new Field();
+            classMemberObject.setName(variablName);
+            classMemberObject.setDataType(TypingUtils.resolveType(entity, schema, isRequired));
+            classMemberObject.setCardinality(isRequired ? "1..1" : "0..1");
             classMembers.add(classMemberObject);
         }
 
@@ -771,14 +769,14 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private @NotNull ClassMembers getClassMember(@NotNull ArrayProperty property,
-                                                 Model modelObject,
-                                                 @NotNull Map<String, Model> models,
-                                                 String variablName) {
+    private @NotNull Field getClassMember(@NotNull ArrayProperty property,
+                                          Model modelObject,
+                                          @NotNull Map<String, Model> models,
+                                          String variablName) {
         LOGGER.entering(LOGGER.getName(), "getClassMember-ArrayProperty");
 
-        ClassMembers classMemberObject = new ClassMembers();
-        Property     propObject        = property.getItems();
+        Field    classMemberObject = new Field();
+        Property propObject        = property.getItems();
 
         if (propObject instanceof RefProperty) {
             classMemberObject = getClassMember((RefProperty) propObject, models, modelObject, variablName);
@@ -791,10 +789,10 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private @NotNull ClassMembers getClassMember(@NotNull StringProperty stringProperty, String variablName) {
+    private @NotNull Field getClassMember(@NotNull StringProperty stringProperty, String variablName) {
         LOGGER.entering(LOGGER.getName(), "getClassMember-StringProperty");
 
-        ClassMembers classMemberObject = new ClassMembers();
+        Field classMemberObject = new Field();
         //classMemberObject.setDataType(getDataType(stringProperty.getType(), true));
         classMemberObject.setName(variablName);
 
@@ -803,13 +801,13 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private @NotNull ClassMembers getClassMember(@NotNull RefProperty refProperty,
-                                                 @NotNull Map<String, Model> models,
-                                                 @Nullable Model modelObject,
-                                                 String variablName) {
+    private @NotNull Field getClassMember(@NotNull RefProperty refProperty,
+                                          @NotNull Map<String, Model> models,
+                                          @Nullable Model modelObject,
+                                          String variablName) {
         LOGGER.entering(LOGGER.getName(), "getClassMember-RefProperty");
 
-        ClassMembers classMemberObject = new ClassMembers();
+        Field classMemberObject = new Field();
 /**
  classMemberObject.setDataType(getDataType(refProperty.getSimpleRef(), true));
  classMemberObject.setName(variablName);
@@ -852,97 +850,10 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    public List<ClassDiagram> generateClassDiagrams(final Graph graph) {
-
-        final List<ClassDiagram> resourceClasses = graph.filter(ResourceEntity.class).stream().map(r -> {
-            final ClassDiagram classDiagram = new ClassDiagram();
-            classDiagram.setClassName(r.dotId);
-            classDiagram.setDescription(r.name);
-            classDiagram.setStereotype("R");
-            classDiagram.setColor("lightblue");
-            classDiagram.setBackgroundColor("#white-lightblue");
-            classDiagram.setDomain(API_DEFINITION);
-            return classDiagram;
-        }).collect(Collectors.toList());
-
-
-        final List<ClassDiagram> domainClasses = graph.filter(DomainEntity.class).stream().map(r -> {
-            final ClassDiagram classDiagram = new ClassDiagram();
-            classDiagram.setClassName(r.dotId);
-            classDiagram.setDescription(r.name);
-            classDiagram.setChildClass(classDiagram.getChildClass());
-            classDiagram.setSuperClass(classDiagram.getSuperClass());
-            classDiagram.setFields(classDiagram.getFields());
-            classDiagram.setStereotype("C");
-            classDiagram.setColor("lightyellow");
-            classDiagram.setBackgroundColor("#white-lightyellow");
-            classDiagram.setDomain(NamingUtils.DOMAIN);
-            return classDiagram;
-        }).collect(Collectors.toList());
-
-        final List<ClassDiagram> collect = new ArrayList<>();
-        collect.addAll(resourceClasses);
-        collect.addAll(domainClasses);
-        return collect;
-    }
-
-    public GraphAdapter getGraphAdapter() {
-
-        return this;
-
-    }
-
     @Override
-    public void adapt(final Map<String, Object> additionalProperties, final Graph graph) {
-        additionalProperties.put("classDiagrams", generateClassDiagrams(graph));
-        additionalProperties.put("graphPackages", graph.graphPackages);
-        //additionalProperties.put("interfaceDiagrams", interfaceDiagrams);
+    public void adapt(final Map<String, Object> additionalProperties) {
 
-
-        final List<OperationDiagram> operationDiagrams = graph.filter(OperationEntity.class).stream().map(op -> {
-            final OperationDiagram operationDiagram = new OperationDiagram();
-            operationDiagram.setClassName(op.dotId);
-            operationDiagram.setDescription(op.name);
-            operationDiagram.setStereotype("O");
-            operationDiagram.setColor("lightgreen");
-            operationDiagram.setBackgroundColor("#white-lightgreen");
-            operationDiagram.setDomain(API_DEFINITION);
-            operationDiagram.setFormParams(op.formParams);
-            operationDiagram.setPathParams(op.pathParams);
-            operationDiagram.setQueryParams(op.queryParams);
-            operationDiagram.setHeaders(op.headers);
-            operationDiagram.setResponses(op.responses);
-            operationDiagram.setBody(op.body);
-            return operationDiagram;
-        }).collect(Collectors.toList());
-
-        additionalProperties.put("operationDiagrams", operationDiagrams);
-
-        // Compute all relationships
-        additionalProperties.put("entityRelations", computeAllRelations(graph, apiGeneration, domainClassGeneration));
+        new ApiGraphAdapter(graph, domainClassGeneration, apiGeneration).adapt(additionalProperties);
 
     }
-
-    /**
-     * Compute all relations
-     *
-     * @return
-     */
-
-    private @NotNull Set<Relationship> computeAllRelations(final Graph graph, boolean apiGeneration, boolean domainClassGeneration) {
-        Set<String> entitiesId = this.graph.entityList.stream().map(e -> e.dotId).collect(Collectors.toSet());
-        return graph.entityList.stream()
-                               .flatMap(entity -> entity.dependencies.stream().map(r -> {
-                                   if (r.getSourceClass() == null) {
-                                       r.from = entity.dotId;
-                                   }
-                                   if (r.getTargetClass() == null) {
-                                       r.to = entity.dotId;
-                                   }
-                                   return r;
-                               }))
-                               .filter(r -> entitiesId.contains(r.getSourceClass()) && entitiesId.contains(r.getTargetClass()))
-                               .collect(Collectors.toSet());
-    }
-
 }

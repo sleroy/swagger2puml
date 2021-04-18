@@ -4,10 +4,7 @@ import com.kicksolutions.swagger.graph.Entity;
 import com.kicksolutions.swagger.plantuml.vo.FieldDefinition;
 import com.kicksolutions.swagger.plantuml.vo.ResponseDefinition;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author sleroy
@@ -20,8 +17,8 @@ public class OperationEntity extends Entity {
     public final List<ResponseDefinition>     responses   = new ArrayList<>();
     public       Map<String, FieldDefinition> body        = new HashMap<>();
 
-    public String                parentAPI;
-    public List<FieldDefinition> headers = new ArrayList<>();
+    public String               parentAPI;
+    public Set<FieldDefinition> headers = new HashSet<>();
 
     public OperationEntity(final String dotId, String name) {
         super(dotId, name);
