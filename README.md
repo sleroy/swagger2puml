@@ -1,6 +1,11 @@
-[![Build Status](https://travis-ci.org/kicksolutions/swagger2puml.svg?branch=master)](https://travis-ci.org/kicksolutions/swagger2puml)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.swagger/swagger-codegen-project/badge.svg?style=plastic)](https://oss.sonatype.org/#nexus-search;gav~io.github.kicksolutions~swagger-plantuml-core~~~)
-[![codecov](https://codecov.io/gh/kicksolutions/swagger2puml/branch/master/graph/badge.svg)](https://codecov.io/gh/kicksolutions/swagger2puml)
+[![Build Status](https://travis-ci.org/sleroy/swagger2puml.svg?branch=master)](https://travis-ci.org/sleroy/swagger2puml)
+[![codecov](https://codecov.io/gh/sleroy/swagger2puml/branch/master/graph/badge.svg)](https://codecov.io/gh/sleroy/swagger2puml)
+
+## Announcement
+
+This version is a _fork_ from kicksolutions that I use to *generate online Swagger diagrams* at the link https://sylvainleroy.com/tool-swagger-to-plantuml-diagram/.
+
+
 
 # Swagger2Puml
 
