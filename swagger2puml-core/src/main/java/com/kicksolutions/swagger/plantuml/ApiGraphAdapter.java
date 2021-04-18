@@ -17,9 +17,10 @@ public class ApiGraphAdapter implements com.kicksolutions.swagger.graph.GraphAda
     private final Graph   graph;
     private final boolean domainClassGeneration;
     private final boolean apiGeneration;
-    private boolean cardinalityGeneration;
+    private final boolean cardinalityGeneration;
 
-    public ApiGraphAdapter(final Graph graph, final boolean domainClassGeneration, final boolean apiGeneration, final boolean cardinalityGeneration) {
+    public ApiGraphAdapter(final Graph graph, final boolean domainClassGeneration, final boolean apiGeneration,
+                           final boolean cardinalityGeneration) {
         this.graph = graph;
         this.domainClassGeneration = domainClassGeneration;
         this.apiGeneration = apiGeneration;
@@ -82,15 +83,19 @@ public class ApiGraphAdapter implements com.kicksolutions.swagger.graph.GraphAda
     private @NotNull Set<Relationship> computeAllRelations(final Graph graph, boolean apiGeneration, boolean domainClassGeneration) {
         Set<String> entitiesId = this.graph.entityList.stream().map(e -> e.dotId).collect(Collectors.toSet());
         return graph.entityList.stream()
-                               .flatMap(entity -> entity.dependencies.stream().map(r -> {
-                                   if (r.getSourceClass() == null) {
-                                       r.from = entity.dotId;
-                                   }
-                                   if (r.getTargetClass() == null) {
-                                       r.to = entity.dotId;
-                                   }
-                                   return r;
-                               }))
+                               .flatMap(entity -> entity.dependencies.stream()
+                                                                     .map(r -> {
+                                                                         if (r.getSourceClass() == null) {
+                                                                             r.from = entity.dotId;
+                                                                         }
+                                                                         if (r.getTargetClass() == null) {
+                                                                             r.to = entity.dotId;
+                                                                         }
+                                                                         if (!cardinalityGeneration) {
+                                                                             r.setCardinality("");
+                                                                         }
+                                                                         return r;
+                                                                     }))
                                .filter(r -> entitiesId.contains(r.getSourceClass()) && entitiesId.contains(r.getTargetClass()))
                                .collect(Collectors.toSet());
     }
