@@ -35,11 +35,14 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     private final        boolean       domainClassGeneration;
     private final        boolean       apiGeneration;
     private final        EntityFactory entityFactory;
-    private final        OpenAPI       swagger;
+    private final OpenAPI swagger;
+    private final boolean cardinalityGeneration;
 
-    public ApiProcessGraphGeneration(final boolean domainClassGeneration, final boolean apiGeneration, final OpenAPI swagger) {
+    public ApiProcessGraphGeneration(final boolean domainClassGeneration, final boolean apiGeneration,
+                                     final boolean cardinalityGeneration, final OpenAPI swagger) {
         this.domainClassGeneration = domainClassGeneration;
         this.apiGeneration = apiGeneration;
+        this.cardinalityGeneration = cardinalityGeneration;
         this.swagger = swagger;
         graph = new Graph();
         graph.addGraphPackage(API_DEFINITION, "#lightgray-white");
@@ -79,7 +82,7 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
                         final ResourceEntity resourceEntity = resourceEntityMap.get(tag);
                         resourceEntity.dependencies.addAll(getInterfaceRelations(operation, resourceEntity.getErrorClass(),
                                                                                  resourceEntity));
-                        resourceEntity.methods.addAll(getInterfaceMethods(httpMethod, operation));
+                        resourceEntity.methods.addAll(getInterfaceMethods(resourceEntity, httpMethod, operation));
                     }
 
                 });
@@ -93,7 +96,7 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
         String         errorClassName = getErrorClassName(operation);
         resourceEntity.dependencies = (getInterfaceRelations(operation, errorClassName, resourceEntity));
         resourceEntity.setErrorClass(errorClassName);
-        resourceEntity.setMethods(getInterfaceMethods(httpMethod, operation));
+        resourceEntity.setMethods(getInterfaceMethods(resourceEntity, httpMethod, operation));
         return resourceEntity;
     }
 
@@ -338,14 +341,14 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private @NotNull List<MethodDefinitions> getInterfaceMethods(@NotNull io.swagger.v3.oas.models.PathItem.HttpMethod method,
+    private @NotNull List<MethodDefinitions> getInterfaceMethods(final @NotNull Entity entity, @NotNull PathItem.HttpMethod method,
                                                                  Operation operation) {
         List<MethodDefinitions> interfaceMethods  = new ArrayList<>();
         MethodDefinitions       methodDefinitions = new MethodDefinitions();
         final String methodDefinition =
                 method.name() + " " + operation.getOperationId() + "(" + getMethodParameters(operation) + ")";
         methodDefinitions.setMethodDefinition(methodDefinition);
-        methodDefinitions.setReturnType(getInterfaceReturnType(operation));
+        methodDefinitions.setReturnType(getInterfaceReturnType(entity, operation));
 
         interfaceMethods.add(methodDefinitions);
 
@@ -463,31 +466,25 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     }
 
 
-    private String getInterfaceReturnType(@NotNull Operation operation) {
-        String returnType = "void";
+    private String getInterfaceReturnType(final @NotNull Entity entity, @NotNull Operation operation) {
 
-        ApiResponses responses = operation.getResponses();
+        ApiResponses responses   = operation.getResponses();
+        Set<String>  returnTypes = new HashSet<>();
         for (Entry<String, ApiResponse> responsesEntry : responses.entrySet()) {
-            String responseCode = responsesEntry.getKey();
+            final ApiResponse apiResponse = responsesEntry.getValue();
+            if (apiResponse.get$ref() != null) {
+                final String componentId = NamingUtils.getComponentId(apiResponse.get$ref());
+                final Schema schema      = findComponent(componentId);
+                returnTypes.add(TypingUtils.resolveType(entity, schema, true));
+            } else {
+                apiResponse.getContent().entrySet().forEach(entry -> {
 
-            if (!(responseCode.equalsIgnoreCase("default") || Integer.parseInt(responseCode) >= 300)) {
-                /**Property responseProperty = responsesEntry.getValue().getSchema();
-
-                 if (responseProperty instanceof RefProperty) {
-                 returnType = ((RefProperty) responseProperty).getSimpleRef();
-                 } else if (responseProperty instanceof ArrayProperty) {
-                 Property arrayResponseProperty = ((ArrayProperty) responseProperty).getItems();
-                 if (arrayResponseProperty instanceof RefProperty) {
-                 returnType = ((RefProperty) arrayResponseProperty).getSimpleRef() + "[]";
-                 }
-                 } else if (responseProperty instanceof ObjectProperty) {
-                 returnType = toTitleCase(operation.getOperationId()) + "Generated";
-                 }
-                 */
+                    returnTypes.add(TypingUtils.resolveType(entity, entry.getValue().getSchema(), true));
+                });
             }
-        }
 
-        return returnType;
+        }
+        return returnTypes.isEmpty() ? "any" : returnTypes.stream().collect(Collectors.joining("|"));
     }
 
 
@@ -667,7 +664,7 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
                 relation.setExtension(true);
                 entity.dependencies.add(relation);
                 final String componentId = NamingUtils.getComponentId(referencedModel);
-                final Schema schema      = this.swagger.getComponents().getSchemas().get(componentId);
+                final Schema schema      = findComponent(componentId);
                 if (schema == null) {
                     LOGGER.log(Level.SEVERE, "Cannot find the type identified by the reference " + referencedModel);
                 }
@@ -679,6 +676,11 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
 
         LOGGER.exiting(LOGGER.getName(), "getClassMembers-ComposedModel");
         return classMembers;
+    }
+
+    private Schema findComponent(final String componentId) {
+        final Schema schema = this.swagger.getComponents().getSchemas().get(componentId);
+        return schema;
     }
 
 
@@ -853,7 +855,7 @@ public class ApiProcessGraphGeneration implements GraphAdapter {
     @Override
     public void adapt(final Map<String, Object> additionalProperties) {
 
-        new ApiGraphAdapter(graph, domainClassGeneration, apiGeneration).adapt(additionalProperties);
+        new ApiGraphAdapter(graph, domainClassGeneration, apiGeneration, cardinalityGeneration).adapt(additionalProperties);
 
     }
 }

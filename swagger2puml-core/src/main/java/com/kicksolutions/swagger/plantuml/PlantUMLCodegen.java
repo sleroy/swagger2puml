@@ -103,6 +103,7 @@ public class PlantUMLCodegen {
 
         final ApiProcessGraphGeneration apiProcessGraphGeneration = new ApiProcessGraphGeneration(domainClassGeneration,
                                                                                                   apiGeneration,
+                                                                                                  includeCardinality,
                                                                                                   swagger);
         apiProcessGraphGeneration.process();
         apiProcessGraphGeneration.adapt(additionalProperties);

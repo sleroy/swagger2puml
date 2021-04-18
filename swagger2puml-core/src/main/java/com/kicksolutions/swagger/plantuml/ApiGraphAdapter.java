@@ -17,11 +17,13 @@ public class ApiGraphAdapter implements com.kicksolutions.swagger.graph.GraphAda
     private final Graph   graph;
     private final boolean domainClassGeneration;
     private final boolean apiGeneration;
+    private boolean cardinalityGeneration;
 
-    public ApiGraphAdapter(final Graph graph, final boolean domainClassGeneration, final boolean apiGeneration) {
+    public ApiGraphAdapter(final Graph graph, final boolean domainClassGeneration, final boolean apiGeneration, final boolean cardinalityGeneration) {
         this.graph = graph;
         this.domainClassGeneration = domainClassGeneration;
         this.apiGeneration = apiGeneration;
+        this.cardinalityGeneration = cardinalityGeneration;
     }
 
     @Override

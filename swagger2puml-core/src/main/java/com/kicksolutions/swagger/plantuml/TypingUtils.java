@@ -7,9 +7,13 @@ import io.swagger.v3.oas.models.media.MapSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.validation.constraints.Null;
 
 public class TypingUtils {
-    public static String resolveType(@NotNull Entity entity, @NotNull final Schema schema, final boolean required) {
+    public static String resolveType(@NotNull Entity entity, @Nullable final Schema schema, final boolean required) {
+        if (schema == null) return "unknown";
         Validate.notNull(entity);
         if (schema instanceof ArraySchema) {
             return resolveArrayType(entity, (ArraySchema) schema, required);
